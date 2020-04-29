@@ -186,7 +186,6 @@ export default {
           province_suspectedCount,
           province_curedCount,
           province_deadCount,
-          updateTime,
           cityName,
           cityEnglishName,
           city_zipCode,
@@ -194,6 +193,7 @@ export default {
           city_suspectedCount,
           city_curedCount,
           city_deadCount,
+          updateTime,
         ] = _;
         if (!!provinceName) {
           data.push({
