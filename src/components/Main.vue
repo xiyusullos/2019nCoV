@@ -23,6 +23,8 @@
 
 <script>
 import {Row} from 'element-ui'
+// import { encode, decode } from "@msgpack/msgpack"
+import {compress, decompress} from 'lz-string'
 
 var CONFIRMED_COUNT = "累计确诊";
 var CURED_COUNT = "治愈";
@@ -58,6 +60,19 @@ export default {
     }
   },
   methods: {
+    loadDataset: function () {
+      return axios.get(this.dbUrl).then((res) => {
+        // console.log(res);
+        this.db = res.data;
+        // var compressed = compress(res.data)
+        // var cachedDb = {
+        //   updateTime: moment.now(),
+        //   data: compressed
+        // };
+        // localStorage.setItem("db", JSON.stringify(cachedDb));
+      });
+    },
+
     handleChangeDomestic: function (values) {
       var [provinceName, cityName] = values;
       this.updateFigure("亚洲", "中国", provinceName, cityName);
@@ -390,7 +405,7 @@ export default {
     },
   },
   created: function () {},
-  mounted: function () {
+  mounted: async function () {
     const loading = this.$loading({
       lock: true,
       text: "数据加载中...",
@@ -398,19 +413,26 @@ export default {
       background: "rgba(0, 0, 0, 0.7)",
     });
 
-    var _this = this;
-    _this.initFigure();
-    axios.get(_this.dbUrl).then((res) => {
-      // console.log(res);
-      // close loading
-      loading.close();
+    this.initFigure();
 
-      _this.db = res.data;
-      this.fetchNCoVData();
-      this.prepareCascaderOptions();
-      this.fetchProvinceNames();
-      this.updateFigure(this.default.provinceName, this.default.cityName);
-    });
+    var db = JSON.parse(localStorage.getItem('db'));
+    var updateTime = !db ? 0 : db.updateTime;
+    var isTwoHoursLater = moment.now() > moment(updateTime).valueOf() + 2 * 1000 * 3600// * 24 * 365
+    console.log('isTwoHoursLater', isTwoHoursLater);
+    if (isTwoHoursLater) {
+      await this.loadDataset();
+    } else {
+      this.db = decompress(db.data);
+    }
+
+    // close loading
+    loading.close();
+    // console.log(this.db);
+
+    this.fetchNCoVData();
+    this.prepareCascaderOptions();
+    this.fetchProvinceNames();
+    this.updateFigure(this.default.provinceName, this.default.cityName);
   },
 }
 </script>
